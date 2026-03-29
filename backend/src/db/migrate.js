@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/db');
 const logger = require('../config/logger');
+// Note: these paths are correct — src/db/../config = src/config
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 

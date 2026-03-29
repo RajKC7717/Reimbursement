@@ -75,8 +75,9 @@ app.use('/api/expenses/ocr', ocrRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit-logs', auditRoutes);
 
-// Countries & currencies (standalone routes)
-app.get('/api/countries', authenticate, companyController.listCountries);
+// Countries (PUBLIC — needed by signup page before auth)
+app.get('/api/countries', companyController.listCountries);
+// Currencies (authenticated)
 app.get('/api/currencies/rates', authenticate, companyController.getExchangeRates);
 
 // ─── Health Check ────────────────────────────────────────────────

@@ -4,9 +4,9 @@
  * and seeds the countries table. Only runs if table is empty.
  */
 const axios = require('axios');
-const { query } = require('../config/db');
-const env = require('../config/env');
-const logger = require('../config/logger');
+const { query } = require('../../config/db');
+const env = require('../../config/env');
+const logger = require('../../config/logger');
 
 async function seedCountries() {
   try {
