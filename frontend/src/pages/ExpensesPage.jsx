@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getExpenses } from '../api/expenseApi';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getStatusBadgeClass } from '../utils/formatters';
 import toast from 'react-hot-toast';
+import { gsap } from 'gsap';
 
 export default function ExpensesPage() {
   const { user } = useAuth();
@@ -14,6 +15,8 @@ export default function ExpensesPage() {
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const limit = 20;
+
+  const tableRef = useRef(null);
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -32,62 +35,81 @@ export default function ExpensesPage() {
 
   useEffect(() => { fetchExpenses(); }, [page, statusFilter]);
 
+  // Handle GSAP animations when data changes and is not loading
+  useEffect(() => {
+    if (!loading && expenses.length > 0 && tableRef.current) {
+      let ctx = gsap.context(() => {
+        gsap.fromTo('.expense-row', 
+          { opacity: 0, y: 15 },
+          { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: 'power2.out' }
+        );
+      }, tableRef);
+      return () => ctx.revert();
+    }
+  }, [loading, expenses]);
+
   const totalPages = Math.ceil(total / limit);
 
   return (
     <div>
-      <div className="flex-between mb-6">
-        <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700 }}>Expenses</h1>
-        <button className="btn btn-primary" onClick={() => navigate('/expenses/new')}>
-          + New Expense
-        </button>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:'var(--space-6)'}}>
+        <div>
+           <div style={{color:'var(--text-muted)', fontWeight:600, fontSize:'0.85rem', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'4px'}}>Ledger</div>
+           <h1 className="headline-hero" style={{ fontSize: '2.5rem' }}>Expenses</h1>
+        </div>
+        <button className="btn btn-primary" onClick={() => navigate('/expenses/new')}>+ Create Expense</button>
       </div>
 
       {/* Filters */}
-      <div className="card mb-6">
-        <div className="card-body" style={{ padding: 'var(--space-3) var(--space-4)' }}>
-          <div className="flex gap-2" style={{ alignItems: 'center' }}>
-            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-slate-600)' }}>Filter:</span>
-            {['', 'draft', 'pending', 'approved', 'rejected', 'cancelled'].map((s) => (
-              <button
-                key={s}
-                className={`btn btn-sm ${statusFilter === s ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => { setStatusFilter(s); setPage(1); }}
-              >
-                {s || 'All'}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div style={{ display:'flex', alignItems:'center', gap:'1rem', marginBottom:'var(--space-6)', overflowX:'auto', paddingBottom:'4px' }}>
+        {['', 'draft', 'pending', 'approved', 'rejected', 'cancelled'].map((s) => {
+          const isActive = statusFilter === s;
+          return (
+            <button
+              key={s}
+              onClick={() => { setStatusFilter(s); setPage(1); }}
+              style={{
+                padding: '8px 16px', borderRadius: '40px', fontSize: '0.85rem', fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.2s', textTransform: 'capitalize',
+                background: isActive ? 'var(--g-950)' : 'var(--c-surface)',
+                color: isActive ? 'white' : 'var(--text-secondary)',
+                border: isActive ? '1px solid var(--g-950)' : '1px solid var(--c-border)',
+                boxShadow: isActive ? '0 4px 12px rgba(5,46,22,0.15)' : 'none'
+              }}
+            >
+              {s || 'All Items'}
+            </button>
+          )
+        })}
       </div>
 
       {/* Table */}
-      <div className="card">
+      <div className="card" style={{overflow:'hidden'}}>
         <div className="card-body" style={{ padding: 0 }}>
           {loading ? (
             <div className="spinner-container"><div className="spinner" /></div>
           ) : expenses.length > 0 ? (
-            <>
-              <div className="table-container">
+            <div ref={tableRef}>
+              <div className="table-container" style={{margin:0, padding:0}}>
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Title</th>
+                      <th style={{paddingLeft:'2rem'}}>Title</th>
                       <th>Category</th>
-                      <th>Amount</th>
-                      <th>Converted</th>
+                      <th>Original Amount</th>
+                      <th>Converted (Co.)</th>
                       <th>Status</th>
                       <th>Date</th>
-                      {user.role !== 'employee' && <th>Submitted By</th>}
+                      {user.role !== 'employee' && <th>Submitter</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {expenses.map((exp) => (
-                      <tr key={exp.id} className="clickable" onClick={() => navigate(`/expenses/${exp.id}`)}>
-                        <td style={{ fontWeight: 500 }}>{exp.title}</td>
+                      <tr key={exp.id} className="clickable expense-row" onClick={() => navigate(`/expenses/${exp.id}`)}>
+                        <td style={{ paddingLeft:'2rem', fontWeight: 600, color: 'var(--text-primary)' }}>{exp.title}</td>
                         <td>{exp.category_name || '—'}</td>
-                        <td className="font-mono">{formatCurrency(exp.amount, exp.currency_code)}</td>
-                        <td className="font-mono">{formatCurrency(exp.amount_in_company_currency)}</td>
+                        <td className="font-mono text-muted">{formatCurrency(exp.amount, exp.currency_code)}</td>
+                        <td className="font-mono" style={{fontWeight:600}}>{formatCurrency(exp.amount_in_company_currency, user?.default_currency_code)}</td>
                         <td><span className={`badge ${getStatusBadgeClass(exp.status)}`}>{exp.status}</span></td>
                         <td>{formatDate(exp.expense_date)}</td>
                         {user.role !== 'employee' && <td>{exp.submitter_name}</td>}
@@ -96,22 +118,26 @@ export default function ExpensesPage() {
                   </tbody>
                 </table>
               </div>
+              
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="pagination" style={{ padding: 'var(--space-4) var(--space-6)' }}>
-                  <span>Page {page} of {totalPages} ({total} total)</span>
-                  <div className="pagination-buttons">
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding: '1.5rem 2rem', borderTop:'1px solid var(--c-border)', background:'var(--c-surface-2)' }}>
+                  <span style={{color:'var(--text-muted)', fontSize:'0.9rem', fontWeight:500}}>
+                    Showing page <strong style={{color:'var(--text-primary)'}}>{page}</strong> of {totalPages}
+                  </span>
+                  <div style={{display:'flex', gap:'0.5rem'}}>
                     <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Previous</button>
                     <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</button>
                   </div>
                 </div>
               )}
-            </>
+            </div>
           ) : (
-            <div className="empty-state">
-              <div className="empty-icon">📑</div>
-              <h3>No expenses found</h3>
-              <p>{statusFilter ? 'Try changing the filter.' : 'Submit your first expense to get started.'}</p>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding: '6rem 2rem', color:'var(--text-muted)'}}>
+              <div style={{marginBottom:'1rem', color:'var(--g-400)', fontWeight: 800}}>—</div>
+              <h3 style={{fontSize:'1.2rem', fontWeight:700, color:'var(--text-primary)', marginBottom:'0.5rem'}}>No expenses found</h3>
+              <p>{statusFilter ? 'Try changing the filter or clearing it to see more results.' : 'Submit your first expense to track your spending.'}</p>
+              {statusFilter && <button className="btn btn-secondary mt-4" style={{marginTop:'1rem'}} onClick={() => {setStatusFilter(''); setPage(1);}}>Clear Filters</button>}
             </div>
           )}
         </div>

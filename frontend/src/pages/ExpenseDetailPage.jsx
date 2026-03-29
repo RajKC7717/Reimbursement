@@ -80,7 +80,7 @@ export default function ExpenseDetailPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-slate-500)', marginBottom: 2 }}>Converted Amount</div>
-                  <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>{formatCurrency(expense.amount_in_company_currency)}</div>
+                  <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700 }}>{formatCurrency(expense.amount_in_company_currency, user?.default_currency_code)}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-slate-500)', marginBottom: 2 }}>Category</div>
@@ -126,20 +126,20 @@ export default function ExpenseDetailPage() {
                   {isApprover && (
                     <>
                       <button className="btn btn-success" onClick={() => handleAction('approve')} disabled={!!actionLoading}>
-                        {actionLoading === 'approve' ? 'Approving...' : '✅ Approve'}
+                        {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
                       </button>
                       <button className="btn btn-danger" onClick={() => handleAction('reject')} disabled={!!actionLoading}>
-                        {actionLoading === 'reject' ? 'Rejecting...' : '❌ Reject'}
+                        {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
                       </button>
                     </>
                   )}
                   {user.role === 'admin' && !isApprover && (
                     <>
                       <button className="btn btn-success" onClick={() => handleAction('force-approve')} disabled={!!actionLoading}>
-                        ⚡ Force Approve
+                        Force Approve
                       </button>
                       <button className="btn btn-danger" onClick={() => handleAction('force-reject')} disabled={!!actionLoading}>
-                        ⚡ Force Reject
+                        Force Reject
                       </button>
                     </>
                   )}

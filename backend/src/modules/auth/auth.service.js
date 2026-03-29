@@ -94,6 +94,7 @@ async function signup({ name, email, password, company_name, country_id }) {
       email: user.email,
       role: user.role,
       company_id: user.company_id,
+      default_currency_code: country.currency_code,
     },
     access_token: accessToken,
     refresh_token: refreshToken,
@@ -107,7 +108,7 @@ async function login({ email, password }) {
   // Find user by email
   const result = await query(
     `SELECT u.id, u.company_id, u.name, u.email, u.password_hash, u.role, u.is_active,
-            c.name as company_name
+            c.name as company_name, c.default_currency_code
      FROM users u
      JOIN companies c ON u.company_id = c.id
      WHERE u.email = $1`,
@@ -156,6 +157,7 @@ async function login({ email, password }) {
       role: user.role,
       company_id: user.company_id,
       company_name: user.company_name,
+      default_currency_code: user.default_currency_code,
     },
     access_token: accessToken,
     refresh_token: refreshToken,

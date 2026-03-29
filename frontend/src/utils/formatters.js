@@ -4,12 +4,17 @@
 
 export function formatCurrency(amount, currencyCode = 'USD') {
   if (amount === null || amount === undefined) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const code = currencyCode || 'USD';
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch(e) {
+    return `${code} ${Number(amount).toFixed(2)}`;
+  }
 }
 
 export function formatDate(dateStr) {
